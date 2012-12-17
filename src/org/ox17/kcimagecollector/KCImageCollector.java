@@ -57,7 +57,7 @@ public class KCImageCollector {
 		return threadLinks;
 	}
 	
-	public  List<String> collectImgLinksForThread(String threadLink) throws Exception {
+	public List<String> collectImgLinksForThread(String threadLink) throws Exception {
 		String threadSrc;
 		List<String> imgLinks = new LinkedList<String>();
 		try {
@@ -99,7 +99,7 @@ public class KCImageCollector {
 		Helpers.writeStrToFile(outHtml.toString(), "kcdump.html");
 	}
 	
-	private static String thumbnailLinkFromImgLink(String imgLink) {
+	public static String thumbnailLinkFromImgLink(String imgLink) {
 		return imgLink.replace("/files/", "/thumbnails/");
 	}
 	
