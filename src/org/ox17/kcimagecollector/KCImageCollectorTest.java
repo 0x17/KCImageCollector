@@ -11,6 +11,7 @@ public class KCImageCollectorTest {
 
 	private static final String ROOT_URL = "http://www.krautchan.net/b/";
 	private static final String PAGE_URL = "http://www.krautchan.net/b/1.html";
+	private static final String BOARD_NAME = "b";
 	private KCImageCollector kcic;
 
 	@Before
@@ -20,25 +21,25 @@ public class KCImageCollectorTest {
 
 	@Test
 	public void testCollectPageLinks() throws Exception {
-		List<String> pageLinks = kcic.collectPageLinks(ROOT_URL);
+		List<String> pageLinks = kcic.collectPageLinks(ROOT_URL, BOARD_NAME);
 		assertFalse(pageLinks.isEmpty());
 	}
 
 	@Test
 	public void testCollectThreadLinks() throws Exception {
-		List<String> threadLinks = kcic.collectThreadLinks(ROOT_URL);
+		List<String> threadLinks = kcic.collectThreadLinks(ROOT_URL, BOARD_NAME);
 		assertFalse(threadLinks.isEmpty());
 	}
 
 	@Test
 	public void testCollectThreadLinksForPage() throws Exception {
-		List<String> threadLinks = kcic.collectThreadLinksForPage(PAGE_URL);
+		List<String> threadLinks = kcic.collectThreadLinksForPage(PAGE_URL, BOARD_NAME);
 		assertFalse(threadLinks.isEmpty());
 	}
 
 	@Test
 	public void testCollectImgLinksForThread() throws Exception {
-		List<String> imgLinks = kcic.collectImgLinksForThread(kcic.collectThreadLinksForPage(PAGE_URL).get(0));
+		List<String> imgLinks = kcic.collectImgLinksForThread(kcic.collectThreadLinksForPage(PAGE_URL, BOARD_NAME).get(0));
 		assertFalse(imgLinks.isEmpty());
 	}
 
