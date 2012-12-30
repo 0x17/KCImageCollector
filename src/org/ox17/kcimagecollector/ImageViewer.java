@@ -8,6 +8,8 @@ import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.MediaTracker;
 import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -32,7 +34,7 @@ public class ImageViewer extends JFrame {
 	
 	private ImagePanel imgPanel;
 	private JLabel topLbl = new JLabel(":3");
-	private JButton backBtn, discardBtn, saveBtn, scaleBtn;
+	private JButton backBtn, discardBtn, saveBtn, scaleBtn, copyBtn;
 	private KCImageCollector kic = new KCImageCollector();
 	private List<String> imgLinks = null;
 	private int curImgIndex;
@@ -223,8 +225,26 @@ public class ImageViewer extends JFrame {
 		initDiscardButton();
 		initSaveButton();
 		initScaleButton();
+		initCopyButton();
 	}
 	
+	private void initCopyButton() {
+		copyBtn = new JButton("Copy");
+		copyBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String curImgLink = getCurImgLink();
+				StringSelection selection = new StringSelection(curImgLink);
+			    Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+			    clipboard.setContents(selection, selection);
+			}
+		});
+	}
+	
+	private String getCurImgLink() {
+		return imgLinks.get(curImgIndex);
+	}
+
 	private void initScaleButton() {
 		scaleBtn = new JButton("Maximize");
 		scaleBtn.addActionListener(new ActionListener() {
@@ -287,6 +307,7 @@ public class ImageViewer extends JFrame {
 		buttonPane.add(saveBtn);
 		buttonPane.add(discardBtn);
 		buttonPane.add(scaleBtn);
+		buttonPane.add(copyBtn);
 		return buttonPane;
 	}
 

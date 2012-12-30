@@ -1,14 +1,18 @@
 package org.ox17.kcimagecollector;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class KCImageCollector {
 	
 	private final static String URL_BASE = "http://krautchan.net";
+	private Map<String, List<String>> threadLinkToImgLinks = new HashMap<String, List<String>>();
+	private final static boolean USE_CACHING = true;
 	
 	public List<String> collectPageLinks(String rootUrl, String boardName) throws Exception {
 		Helpers.log("Collecting page links...");
@@ -61,23 +65,29 @@ public class KCImageCollector {
 		return threadLinks;
 	}
 	
-	public List<String> collectImgLinksForThread(String threadLink) throws Exception {
-		String threadSrc;
-		List<String> imgLinks = new LinkedList<String>();
-		try {
-		threadSrc = Helpers.loadUrlIntoStr(threadLink);
-		} catch(Exception e) { return imgLinks; }
-		String regex = "<a href=\"(/files/[0-9]+.(jpg|png))\" target=\"_blank\">";
-		Pattern p = Pattern.compile(regex);
-		Matcher m = p.matcher(threadSrc);
-		
-		while(m.find()) {
-			if(m.groupCount() == 2) {
-				String imgLink = URL_BASE+m.group(1);				
-				imgLinks.add(imgLink);
+	public List<String> collectImgLinksForThread(String threadLink) throws Exception {		
+		if(USE_CACHING && threadLinkToImgLinks.containsKey(threadLink)) {
+			return threadLinkToImgLinks.get(threadLink);
+		} else {
+			List<String> imgLinks = new LinkedList<String>();
+			String threadSrc;			
+			try {
+			threadSrc = Helpers.loadUrlIntoStr(threadLink);
+			} catch(Exception e) { return imgLinks; }
+			String regex = "<a href=\"(/files/[0-9]+.(jpg|png))\" target=\"_blank\">";
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(threadSrc);
+			
+			while(m.find()) {
+				if(m.groupCount() == 2) {
+					String imgLink = URL_BASE+m.group(1);				
+					imgLinks.add(imgLink);
+				}
 			}
-		}
-		return imgLinks;
+			if(USE_CACHING)
+				threadLinkToImgLinks.put(threadLink, imgLinks);
+			return imgLinks;
+		}		
 	}
 	
 	public static void buildHtmlFileOutOfImgLinks(List<String> imgLinks, String outFilename) throws IOException {
