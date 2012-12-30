@@ -41,8 +41,8 @@ public class Helpers {
 		else {
 			Pattern p = Pattern.compile("text/html;\\s+charset=([^\\s]+)\\s*");
 			Matcher m = p.matcher(con.getContentType());
-			/* If Content-Type doesn't match this pre-conception, choose default and 
-			 * hope for the best. */
+			// If Content-Type doesn't match this pre-conception, choose default and 
+			 // hope for the best. 
 			charset = m.matches() ? m.group(1) : "ISO-8859-1";
 		}
 		
@@ -50,13 +50,14 @@ public class Helpers {
 		StringBuilder buf = new StringBuilder();
 		
 		try {
-		while (true) {
-		  int ch = r.read();
-		  if (ch < 0)
-		    break;
-		  buf.append((char) ch);
+			while(r.ready()) {
+				int ch = r.read();
+				if(ch < 0) break;
+				buf.append((char) ch);
+			}
+		} catch(Exception e) {
+			return "";
 		}
-		} catch(Exception e) { return ""; }
 		return buf.toString();
 	}
 	
