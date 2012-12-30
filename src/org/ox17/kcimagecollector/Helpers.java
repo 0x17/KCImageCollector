@@ -1,18 +1,31 @@
 package org.ox17.kcimagecollector;
 
+import java.awt.Image;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.imageio.ImageIO;
+
 public class Helpers {
 	
+	private static List<MessageCallback> msgCallbacks = new LinkedList<MessageCallback>();
+	
 	public static void log(String msg) {
+		for(MessageCallback callback : msgCallbacks) {
+			callback.action(msg);
+		}
 		System.out.println(msg);
 		System.out.flush();
 	}
@@ -53,6 +66,30 @@ public class Helpers {
 		bw.write(str);
 		bw.close();
 		fw.close();
+	}
+	
+	public static Image imgFromUrl(String urlStr) throws Exception {
+		return Toolkit.getDefaultToolkit().getImage(new URL(urlStr));
+	}
+
+	public static void addLogCallback(MessageCallback msgCallback) {
+		msgCallbacks.add(msgCallback);
+	}
+
+	public static String getImgFilenameFromUrl(String imgUrl) {
+		String[] parts = imgUrl.split("/");
+		return parts[parts.length-1];
+	}
+
+	public static void loadUrlIntoFile(String imgUrl, File f) throws Exception {
+		URL url = new URL(imgUrl);
+		BufferedImage bi = ImageIO.read(url);
+		ImageIO.write(bi, getExtensionFromImgName(f.getName()), f);
+	}
+
+	private static String getExtensionFromImgName(String imgName) {
+		String[] parts = imgName.split("\\.");
+		return parts[parts.length-1];
 	}
 	
 }

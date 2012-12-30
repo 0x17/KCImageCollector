@@ -11,6 +11,8 @@ public class KCImageCollector {
 	private final static String URL_BASE = "http://krautchan.net";
 	
 	public List<String> collectPageLinks(String rootUrl, String boardName) throws Exception {
+		Helpers.log("Collecting page links...");
+		
 		String rootPageSrc = Helpers.loadUrlIntoStr(rootUrl);
 		List<String> pageLinks = new LinkedList<String>();
 		
@@ -22,8 +24,10 @@ public class KCImageCollector {
 		while(m.find()) {
 			if(m.groupCount() == 1) {
 				String pageLink = URL_BASE+m.group(1);
-				if(!pageLinks.contains(pageLink))
+				if(!pageLinks.contains(pageLink)) {
 					pageLinks.add(pageLink);
+					Helpers.log("Added page link: " + pageLink);
+				}
 			}
 		}
 		
@@ -92,22 +96,31 @@ public class KCImageCollector {
 		outHtml.append("</table></html>");
 		Helpers.writeStrToFile(outHtml.toString(), outFilename);
 	}
+	
+	public List<String> collectImgLinksForBoards(String[] boardNames) throws Exception {
+		List<String> imgLinks = new LinkedList<String>();
+		
+		int i=1;
+		int numBoards = boardNames.length;
+		for(String board : boardNames) {
+			Helpers.log("Collect for /" + board + "/... ("+(i++)+"/"+numBoards+")");
+			List<String> tls = collectThreadLinks(URL_BASE+"/"+board+"/", board);
+			int j=1;
+			int numThreads = tls.size();
+			for(String tl : tls) {
+				Helpers.log("Collecting image links for thread " + tl + " ... ("+(j++)+"/"+numThreads+")");
+				imgLinks.addAll(collectImgLinksForThread(tl));
+			}
+		}
+		
+		return imgLinks;
+	}
 
 	public static void main(String[] args) throws Exception {
 		final String[] boards = {"b", "v", "int"};
 		
 		KCImageCollector tlc = new KCImageCollector();		
-		List<String> imgLinks = new LinkedList<String>();
-		
-		for(String board : boards) {
-			Helpers.log("Collect for /" + board + "/...");
-			List<String> tls = tlc.collectThreadLinks(URL_BASE+"/"+board+"/", board);
-			for(String tl : tls) {
-				Helpers.log("Collecting image links for thread " + tl + " ...");
-				imgLinks.addAll(tlc.collectImgLinksForThread(tl));
-			}
-		}
-				
+		List<String> imgLinks = tlc.collectImgLinksForBoards(boards);				
 		buildHtmlFileOutOfImgLinks(imgLinks, "kcdump.html");
 	}
 	
