@@ -7,6 +7,7 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
+import java.awt.MediaTracker;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -23,6 +24,15 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 public class ImageViewer extends JFrame {
+	
+	private class TestFrame extends JFrame {
+		private ImagePanel ip;
+		public TestFrame() throws Exception {
+			super("TestFrame");
+			ip = new ImagePanel();
+			add(ip);
+		}
+	}
 	
 	private class ImagePanel extends JPanel {
 		private static final long serialVersionUID = 1L;
@@ -157,15 +167,23 @@ public class ImageViewer extends JFrame {
 	}
 	
 	// FIXME: Does this delay painting?
-	private void updatePreloads() throws Exception {
+	private void updatePreloads() throws Exception {		
+		System.out.println("Start preloads");
+		
+		MediaTracker tracker = new MediaTracker(this);
+		
 		int[] addedIndices = new int[NUM_PRELOADED_THUMBS];
 		int j = 0;
 		for(int i = curImgIndex + 1; i < curImgIndex + 1 + NUM_PRELOADED_THUMBS && i < numImgLinks; i++) {
 			addedIndices[j++] = i;
 			if(!preloadedThumbs.containsKey(i)) {
+				System.out.println("Fetching img no. " + i);
 				Image imgObj = Helpers.imgFromUrl(KCImageCollector.thumbnailLinkFromImgLink(imgLinks.get(i)));
 				preloadedThumbs.put(i, imgObj);
-				Toolkit.getDefaultToolkit().prepareImage(imgObj, imgPanel.getImgWidth(), imgPanel.getImgHeight(), imgPanel);
+				int w = imgPanel.getImgWidth();
+				int h = imgPanel.getImgHeight();
+				tracker.addImage(imgObj, i, w, h);
+				Toolkit.getDefaultToolkit().prepareImage(imgObj, w, h, imgPanel);
 			}
 		}
 		
@@ -186,6 +204,10 @@ public class ImageViewer extends JFrame {
 			preloadedThumbs.get(key).flush();
 			preloadedThumbs.remove(key);
 		}
+		
+		tracker.waitForAll();
+		
+		System.out.println("Finished preloads!");
 	}
 
 	private void paintCurImg() throws Exception {

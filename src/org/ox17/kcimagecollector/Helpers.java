@@ -69,7 +69,7 @@ public class Helpers {
 	}
 	
 	public static Image imgFromUrl(String urlStr) throws Exception {
-		return Toolkit.getDefaultToolkit().getImage(new URL(urlStr));
+		return Toolkit.getDefaultToolkit().createImage(new URL(urlStr));
 	}
 
 	public static void addLogCallback(MessageCallback msgCallback) {
