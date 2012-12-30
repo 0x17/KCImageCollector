@@ -3,7 +3,6 @@ package org.ox17.kcimagecollector;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
@@ -25,64 +24,8 @@ import javax.swing.JPanel;
 
 public class ImageViewer extends JFrame {
 	
-	private class TestFrame extends JFrame {
-		private ImagePanel ip;
-		public TestFrame() throws Exception {
-			super("TestFrame");
-			ip = new ImagePanel();
-			add(ip);
-		}
-	}
-	
-	private class ImagePanel extends JPanel {
-		private static final long serialVersionUID = 1L;
-		private Image img = null;
-		
-		public ImagePanel() throws Exception {
-		}
-		
-		public void setToImageFromLink(String urlStr) throws Exception {
-			img = Helpers.imgFromUrl(urlStr);
-			repaint();
-		}
-		
-		public void setToImage(Image img) {
-			this.img = img;
-			repaint();
-		}
-		
-		@Override
-		public void paint(Graphics g) {
-			super.paint(g);
-			if(img != null) {
-				Dimension boundsDim = new Dimension(getBounds().width, getBounds().height);
-				
-				int imgWidth = getImgWidth();
-				int imgHeight = getImgHeight();
-				
-				if(!scaled) {
-					int x = (int)((boundsDim.width - imgWidth) / 2.0f);
-					int y = (int)((boundsDim.height - imgHeight) / 2.0f);
-					g.drawImage(img, x, y, this);
-				} else {
-					int x = (int)((boundsDim.width - imgWidth) / 2.0f);
-					int y = (int)((boundsDim.height - imgHeight) / 2.0f);
-					g.drawImage(img, x, y, imgWidth, imgHeight, this);
-				}
-			}
-		}
-		
-		private int getImgWidth() {
-			return scaled ? (int)(getBounds().width * 0.8f) : img.getWidth(this);
-		}
-		
-		private int getImgHeight() {
-			return scaled ? (int)(getBounds().height * 0.8f) : img.getHeight(this);
-		}
-	}
-	
 	private static final long serialVersionUID = 1L;
-	private static final int NUM_PRELOADED_THUMBS = 10;
+	private static final int NUM_PRELOADED_THUMBS = 20;
 	
 	private Map<Integer, Image> preloadedThumbs = new HashMap<Integer, Image>(NUM_PRELOADED_THUMBS);
 	
@@ -95,7 +38,6 @@ public class ImageViewer extends JFrame {
 	private int curImgIndex;
 
 	private Dimension initialDim = new Dimension(800, 600);
-	private boolean scaled = false;
 	
 	public ImageViewer() throws Exception {
 		super("KCImageViewer");
@@ -162,12 +104,16 @@ public class ImageViewer extends JFrame {
 				curImgIndex = numImgLinks - 1;
 			}
 			paintCurImg();
-			updatePreloads();
+			if(preloadsInvalidated())
+				updatePreloads();
 		}
 	}
 	
-	// FIXME: Does this delay painting?
-	private void updatePreloads() throws Exception {		
+	private boolean preloadsInvalidated() {
+		return !preloadedThumbs.containsKey(curImgIndex+1);
+	}
+
+	private void updatePreloads() throws Exception {
 		System.out.println("Start preloads");
 		
 		MediaTracker tracker = new MediaTracker(this);
@@ -228,7 +174,6 @@ public class ImageViewer extends JFrame {
 			curImgIndex--;
 			curImgIndex = curImgIndex < 0 ? 0 : curImgIndex;
 			paintCurImg();
-			updatePreloads();
 		}
 	}
 	
@@ -256,8 +201,8 @@ public class ImageViewer extends JFrame {
 		scaleBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
-				scaled = !scaled;
-				scaleBtn.setText(scaled ? "Minimize" : "Maximize");
+				imgPanel.toggleScale();
+				scaleBtn.setText(imgPanel.isScaled() ? "Minimize" : "Maximize");
 				imgPanel.repaint();
 			}
 		});
