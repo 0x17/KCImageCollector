@@ -1,16 +1,21 @@
 package org.ox17.kcimagecollector;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -31,22 +36,56 @@ public class ImageViewer extends JFrame {
 			repaint();
 		}
 		
+		public void setToImage(Image img) {
+			this.img = img;
+			repaint();
+		}
+		
 		@Override
 		public void paint(Graphics g) {
 			super.paint(g);
-			if(img != null)
-				g.drawImage(img, 0, 0, this);
-		}		
+			if(img != null) {
+				Dimension boundsDim = new Dimension(getBounds().width, getBounds().height);
+				
+				int imgWidth = getImgWidth();
+				int imgHeight = getImgHeight();
+				
+				if(!scaled) {
+					int x = (int)((boundsDim.width - imgWidth) / 2.0f);
+					int y = (int)((boundsDim.height - imgHeight) / 2.0f);
+					g.drawImage(img, x, y, this);
+				} else {
+					int x = (int)((boundsDim.width - imgWidth) / 2.0f);
+					int y = (int)((boundsDim.height - imgHeight) / 2.0f);
+					g.drawImage(img, x, y, imgWidth, imgHeight, this);
+				}
+			}
+		}
+		
+		private int getImgWidth() {
+			return scaled ? (int)(getBounds().width * 0.8f) : img.getWidth(this);
+		}
+		
+		private int getImgHeight() {
+			return scaled ? (int)(getBounds().height * 0.8f) : img.getHeight(this);
+		}
 	}
 	
 	private static final long serialVersionUID = 1L;
-
+	private static final int NUM_PRELOADED_THUMBS = 10;
+	
+	private Map<Integer, Image> preloadedThumbs = new HashMap<Integer, Image>(NUM_PRELOADED_THUMBS);
+	
 	private ImagePanel imgPanel;
 	private JLabel topLbl = new JLabel(":3");
-	private JButton backBtn, discardBtn, saveBtn;
+	private JButton backBtn, discardBtn, saveBtn, scaleBtn;
 	private KCImageCollector kic = new KCImageCollector();
 	private List<String> imgLinks = null;
+	private int numImgLinks;
 	private int curImgIndex;
+
+	private Dimension initialDim = new Dimension(800, 600);
+	private boolean scaled = false;
 	
 	public ImageViewer() throws Exception {
 		super("KCImageViewer");
@@ -101,6 +140,7 @@ public class ImageViewer extends JFrame {
 
 	private void loadLinks() throws Exception {
 		imgLinks = kic.collectImgLinksForBoards(new String[]{"m"});
+		numImgLinks = imgLinks.size();
 		curImgIndex = -1;
 		showNextImg();
 	}
@@ -108,20 +148,65 @@ public class ImageViewer extends JFrame {
 	public void showNextImg() throws Exception {
 		if(imgLinks != null) {
 			curImgIndex++;
-			paintCurImg();			 
+			if(curImgIndex >= numImgLinks) {
+				curImgIndex = numImgLinks - 1;
+			}
+			paintCurImg();
+			updatePreloads();
 		}
 	}
 	
+	// FIXME: Does this delay painting?
+	private void updatePreloads() throws Exception {
+		int[] addedIndices = new int[NUM_PRELOADED_THUMBS];
+		int j = 0;
+		for(int i = curImgIndex + 1; i < curImgIndex + 1 + NUM_PRELOADED_THUMBS && i < numImgLinks; i++) {
+			addedIndices[j++] = i;
+			if(!preloadedThumbs.containsKey(i)) {
+				Image imgObj = Helpers.imgFromUrl(KCImageCollector.thumbnailLinkFromImgLink(imgLinks.get(i)));
+				preloadedThumbs.put(i, imgObj);
+				Toolkit.getDefaultToolkit().prepareImage(imgObj, imgPanel.getImgWidth(), imgPanel.getImgHeight(), imgPanel);
+			}
+		}
+		
+		List<Integer> keysToRemove = new LinkedList<Integer>();
+		for(int ix : preloadedThumbs.keySet()) {
+			boolean wasAdded = false;
+			for(int i=0; i<j; i++) {
+				if(addedIndices[i] == ix) {
+					wasAdded = true;
+					break;
+				}
+			}
+			if(!wasAdded)
+				keysToRemove.add(ix);
+		}
+		
+		for(int key : keysToRemove) {
+			preloadedThumbs.get(key).flush();
+			preloadedThumbs.remove(key);
+		}
+	}
+
 	private void paintCurImg() throws Exception {
 		String curLink = imgLinks.get(curImgIndex);
-		imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
-		Helpers.log("Showing image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");		
+		boolean hit;
+		if(preloadedThumbs.containsKey(curImgIndex)) {
+			imgPanel.setToImage(preloadedThumbs.get(curImgIndex));
+			hit = true;
+		} else {
+			imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
+			hit = false;
+		}
+		Helpers.log("Showing image: " + curLink + " (" + (curImgIndex+1) + "/" + numImgLinks + ") cache " + (hit ? "hit" : "miss"));		
 	}
 
 	public void showPrevImg() throws Exception {
 		if(imgLinks != null) {
 			curImgIndex--;
+			curImgIndex = curImgIndex < 0 ? 0 : curImgIndex;
 			paintCurImg();
+			updatePreloads();
 		}
 	}
 	
@@ -141,8 +226,21 @@ public class ImageViewer extends JFrame {
 		initBackButton();
 		initDiscardButton();
 		initSaveButton();
+		initScaleButton();
 	}
 	
+	private void initScaleButton() {
+		scaleBtn = new JButton("Maximize");
+		scaleBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent ae) {
+				scaled = !scaled;
+				scaleBtn.setText(scaled ? "Minimize" : "Maximize");
+				imgPanel.repaint();
+			}
+		});
+	}
+
 	private void initSaveButton() {
 		saveBtn = new JButton("Save");
 		saveBtn.addActionListener(new ActionListener() {			
@@ -160,7 +258,7 @@ public class ImageViewer extends JFrame {
 	}
 
 	private void initDiscardButton() {
-		discardBtn = new JButton("Discard");
+		discardBtn = new JButton("Next");
 		discardBtn.addActionListener(new ActionListener() {			
 			@Override
 			public void actionPerformed(ActionEvent ae) {
@@ -174,7 +272,7 @@ public class ImageViewer extends JFrame {
 	}
 
 	private void initBackButton() {
-		backBtn = new JButton("Back");
+		backBtn = new JButton("Prev");
 		backBtn.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
@@ -192,14 +290,15 @@ public class ImageViewer extends JFrame {
 		lowerPane.add(backBtn);	
 		lowerPane.add(saveBtn);
 		lowerPane.add(discardBtn);
+		lowerPane.add(scaleBtn);
 		add(lowerPane, BorderLayout.SOUTH);
 	}
 
 	private void initFrame() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout());
-		setSize(800, 600);
-		setResizable(false);
+		setSize(initialDim);
+		setResizable(true);
 		setLocationRelativeTo(null);
 		add(topLbl, BorderLayout.NORTH);
 	}
