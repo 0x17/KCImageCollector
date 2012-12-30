@@ -6,3 +6,5 @@ KCImageCollector
     - Use left and right arrow keys for navigating to the previous or next thumbnail.
 	- Use down arrow key to save.
 	- Use escape key to quit.
+
+![GUI-Screenshot](https://dl.dropbox.com/u/1608301/KCImageViewer.png "KCImageCollector GUI")
