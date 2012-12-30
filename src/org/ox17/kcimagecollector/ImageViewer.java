@@ -3,6 +3,7 @@ package org.ox17.kcimagecollector;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
@@ -22,6 +23,7 @@ import java.util.Map;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 
@@ -29,33 +31,25 @@ public class ImageViewer extends JFrame {
 	
 	private static final long serialVersionUID = 1L;
 	private static final int NUM_PRELOADED_THUMBS = 20;
+	protected static final String NO_IMGS_LOADED_MSG = "No images loaded yet. Please wait for \"Found x images...\" message!";
 	
 	private Map<Integer, Image> preloadedThumbs = new HashMap<Integer, Image>(NUM_PRELOADED_THUMBS);
 	
 	private ImagePanel imgPanel;
-	private JLabel topLbl = new JLabel(":3");
+	private JLabel topLbl = new JLabel(":3"), imgIdLbl = new JLabel(":3");
 	private JButton backBtn, discardBtn, saveBtn, scaleBtn, copyBtn;
-	private KCImageCollector kic = new KCImageCollector();
-	private List<String> imgLinks = null;
+	private List<String> imgLinks;
 	private int curImgIndex;
 
 	private Dimension initialDim = new Dimension(800, 600);
-	private IterationState iterationState = new IterationState("b");
 	private JProgressBar pbar;
-	private ProgressCallback pcallback = new ProgressCallback() {
+	
+	private LinkFoundCallback lfcallback = new LinkFoundCallback() {
 		@Override
-		public void update(int progress) {
-			if(progress == -1) {
-				pbar.setIndeterminate(true);
+		public void found(String linkUrl) {
+			if(!imgLinks.contains(linkUrl)) {
+				imgLinks.add(linkUrl);
 			}
-			else {
-				if(pbar.isIndeterminate())
-					pbar.setIndeterminate(false);
-				
-				pbar.setValue(progress);
-			}
-			
-			repaint();
 		}
 	};
 	
@@ -68,17 +62,26 @@ public class ImageViewer extends JFrame {
 			}
 		});
 		initFrame();
+		initTopPanel();
 		initImgPanel();
 		initButtons();		
 		initLowerPanel();		
 		initKeyEventDispatcher();
 	}
 
+	private void initTopPanel() {
+		JPanel topPanel = new JPanel(new GridLayout(1, 2));
+		add(topPanel, BorderLayout.NORTH);
+		topPanel.add(topLbl);
+		topPanel.add(imgIdLbl);
+	}
+
 	private void initLowerPanel() {
 		JPanel lowerPane = new JPanel(new BorderLayout());
 		lowerPane.add(initButtonPanel(), BorderLayout.CENTER);
-		add(lowerPane, BorderLayout.SOUTH);		
+		add(lowerPane, BorderLayout.SOUTH);
 		pbar = new JProgressBar();
+		pbar.setIndeterminate(true);
 		lowerPane.add(pbar, BorderLayout.EAST);
 	}
 
@@ -119,20 +122,18 @@ public class ImageViewer extends JFrame {
 	}
 
 	private void loadLinks() throws Exception {
-		imgLinks = kic.startImgLinkIteration(iterationState, 15, pcallback);
+		imgLinks = new LinkedList<String>();
+		/*Thread collectThread = */KCImageCollector.collectImgLinksForBoardConcurrent("b", lfcallback);
+		imgLinks.add("http://krautchan.net/files/1331112741002.png");
 		curImgIndex = -1;
 		showNextImg();
 	}
 
 	public void showNextImg() throws Exception {
-		if(imgLinks != null) {
+		if(imgLinks != null && !imgLinks.isEmpty()) {
 			curImgIndex++;
 			if(curImgIndex >= imgLinks.size()) {
-				if(iterationState.done)
-					curImgIndex = imgLinks.size() - 1;
-				else {
-					imgLinks.addAll(kic.continueImgLinkIteration(iterationState, 15, pcallback));
-				}
+				curImgIndex = imgLinks.size() - 1;
 			}
 			
 			if(preloadsInvalidated())
@@ -147,9 +148,6 @@ public class ImageViewer extends JFrame {
 	}
 
 	private void updatePreloads() throws Exception {		
-		pbar.setIndeterminate(true);
-		repaint();
-		
 		MediaTracker tracker = new MediaTracker(this);
 		
 		int[] addedIndices = new int[NUM_PRELOADED_THUMBS];
@@ -185,9 +183,6 @@ public class ImageViewer extends JFrame {
 		}
 		
 		tracker.waitForAll();
-		
-		pbar.setIndeterminate(false);
-		repaint();
 	}
 
 	private void paintCurImg() throws Exception {
@@ -197,10 +192,10 @@ public class ImageViewer extends JFrame {
 		} else {
 			imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
 		}
-		Helpers.log("Showing image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");		
+		imgIdLbl.setText("Current image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");		
 	}
 
-	public void showPrevImg() throws Exception {
+	private void showPrevImg() throws Exception {
 		if(imgLinks != null) {
 			curImgIndex--;
 			curImgIndex = curImgIndex < 0 ? 0 : curImgIndex;
@@ -279,6 +274,9 @@ public class ImageViewer extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
 				try {
+					if(imgLinks.size() == 1) {
+						JOptionPane.showMessageDialog(null, NO_IMGS_LOADED_MSG, "Info", JOptionPane.INFORMATION_MESSAGE);
+					}
 					showNextImg();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -293,6 +291,9 @@ public class ImageViewer extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
 				try {
+					if(imgLinks.size() == 1) {
+						JOptionPane.showMessageDialog(null, NO_IMGS_LOADED_MSG, "Info", JOptionPane.INFORMATION_MESSAGE);
+					}
 					showPrevImg();
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -317,7 +318,6 @@ public class ImageViewer extends JFrame {
 		setSize(initialDim);
 		setResizable(true);
 		setLocationRelativeTo(null);
-		add(topLbl, BorderLayout.NORTH);
 	}
 
 	public static void main(String[] args) throws Exception {

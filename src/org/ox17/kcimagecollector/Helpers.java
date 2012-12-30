@@ -20,6 +20,7 @@ import javax.imageio.ImageIO;
 
 public class Helpers {
 	
+	private static final long URL_LOAD_TIMEOUT = 8000;
 	private static List<MessageCallback> msgCallbacks = new LinkedList<MessageCallback>();
 	
 	public static void log(String msg) {
@@ -31,6 +32,8 @@ public class Helpers {
 	}
 
 	public static String loadUrlIntoStr(String urlStr) throws Exception {
+		long startTime = System.currentTimeMillis();
+		
 		URL url = new URL(urlStr);
 		URLConnection con = url.openConnection();
 		
@@ -50,10 +53,22 @@ public class Helpers {
 		StringBuilder buf = new StringBuilder();
 		
 		try {
-			while(r.ready()) {
+			while(true) {
+				if(!r.ready()) {
+					if(buf.toString().contains("</html>"))
+						return buf.toString();
+				}
+				
+				while(!r.ready()) {					
+					if(System.currentTimeMillis() - startTime > URL_LOAD_TIMEOUT) {
+						Helpers.log("Timeout loading: " + urlStr + " ... retry!");
+						return loadUrlIntoStr(urlStr);
+					}
+				}
+				
 				int ch = r.read();
 				if(ch < 0) break;
-				buf.append((char) ch);
+				buf.append((char) ch);				
 			}
 		} catch(Exception e) {
 			return "";

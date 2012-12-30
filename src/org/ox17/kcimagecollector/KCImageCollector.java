@@ -30,10 +30,11 @@ public class KCImageCollector {
 				String pageLink = URL_BASE+m.group(1);
 				if(!pageLinks.contains(pageLink)) {
 					pageLinks.add(pageLink);
-					Helpers.log("Added page link: " + pageLink);
 				}
 			}
 		}
+		
+		Helpers.log("Found " + pageLinks.size() + " pages on /" + boardName + "/");
 		
 		return pageLinks;
 	}
@@ -62,6 +63,8 @@ public class KCImageCollector {
 			}
 		}
 		
+		Helpers.log("Found " + threadLinks.size() + " threads on page " + pageLink);
+		
 		return threadLinks;
 	}
 	
@@ -87,7 +90,7 @@ public class KCImageCollector {
 			if(USE_CACHING)
 				threadLinkToImgLinks.put(threadLink, imgLinks);
 			return imgLinks;
-		}		
+		}
 	}
 	
 	public static void buildHtmlFileOutOfImgLinks(List<String> imgLinks, String outFilename) throws IOException {
@@ -108,22 +111,78 @@ public class KCImageCollector {
 	}
 	
 	public List<String> collectImgLinksForBoards(String[] boardNames) throws Exception {
-		List<String> imgLinks = new LinkedList<String>();
-		
+		List<String> imgLinks = new LinkedList<String>();		
 		int i=1;
 		int numBoards = boardNames.length;
 		for(String board : boardNames) {
 			Helpers.log("Collect for /" + board + "/... ("+(i++)+"/"+numBoards+")");
-			List<String> tls = collectThreadLinks(URL_BASE+"/"+board+"/", board);
-			int j=1;
-			int numThreads = tls.size();
-			for(String tl : tls) {
-				Helpers.log("Collecting image links for thread " + tl + " ... ("+(j++)+"/"+numThreads+")");
-				imgLinks.addAll(collectImgLinksForThread(tl));
-			}
+			imgLinks.addAll(collectImgLinksForBoard(board));
 		}
 		
 		return imgLinks;
+	}
+	
+	public List<String> collectImgLinksForBoard(String boardName) throws Exception {
+		List<String> imgLinks = new LinkedList<String>();
+		List<String> tls = collectThreadLinks(URL_BASE+"/"+boardName+"/", boardName);
+		int j=1;
+		int numThreads = tls.size();
+		for(String tl : tls) {
+			Helpers.log("Collecting image links for thread " + tl + " ... ("+(j++)+"/"+numThreads+")");			
+			imgLinks.addAll(collectImgLinksForThread(tl));
+		}
+		return imgLinks;
+	}
+	
+	public static Thread collectImgLinksForBoardConcurrent(String boardName, LinkFoundCallback callback) throws Exception {
+		Thread t = new Thread(new CollectRunner(boardName, callback));
+		t.start();
+		return t;		
+	}
+	
+	private static class CollectRunner implements Runnable {		
+		private String boardName;
+		private LinkFoundCallback callback;
+
+		public CollectRunner(String boardName, LinkFoundCallback callback) {
+			this.boardName = boardName;
+			this.callback = callback;	
+		}
+
+		@Override
+		public void run() {
+			KCImageCollector kic = new KCImageCollector();
+			try {
+				List<String> tls = kic.collectThreadLinks(URL_BASE+"/"+boardName+"/", boardName);
+				for(String tl : tls) {			
+					collectImgLinksForThreadConcurrent(tl);
+				}
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		private void collectImgLinksForThreadConcurrent(String threadLink) {
+			String threadSrc;
+			try {
+			threadSrc = Helpers.loadUrlIntoStr(threadLink);
+			} catch(Exception e) { e.printStackTrace(); return; }
+			String regex = "<a href=\"(/files/[0-9]+.(jpg|png))\" target=\"_blank\">";
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(threadSrc);
+			
+			int ctr = 0;
+			
+			while(m.find()) {
+				if(m.groupCount() == 2) {
+					String imgLink = URL_BASE+m.group(1);
+					callback.found(imgLink);
+					ctr ++;
+				}
+			}
+			
+			Helpers.log("Found " + ctr + " images on " + threadLink);
+		}		
 	}
 
 	public static void main(String[] args) throws Exception {
