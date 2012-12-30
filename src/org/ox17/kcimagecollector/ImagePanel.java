@@ -46,11 +46,19 @@ public class ImagePanel extends JPanel {
 	}
 	
 	public int getImgWidth() {
-		return scaled ? (int)(getBounds().width * 0.8f) : img.getWidth(this);
+		return getImgWidth(this.img);
 	}
 	
 	public int getImgHeight() {
-		return scaled ? (int)(getBounds().height * 0.8f) : img.getHeight(this);
+		return getImgHeight(this.img);
+	}
+	
+	public int getImgWidth(Image image) {
+		return scaled ? (int)(getBounds().width * 0.8f) : image.getWidth(this);
+	}
+	
+	public int getImgHeight(Image image) {
+		return scaled ? (int)(getBounds().height * 0.8f) : image.getHeight(this);
 	}
 
 	public void toggleScale() {

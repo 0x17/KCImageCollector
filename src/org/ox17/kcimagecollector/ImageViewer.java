@@ -21,6 +21,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 
 public class ImageViewer extends JFrame {
 	
@@ -34,10 +35,27 @@ public class ImageViewer extends JFrame {
 	private JButton backBtn, discardBtn, saveBtn, scaleBtn;
 	private KCImageCollector kic = new KCImageCollector();
 	private List<String> imgLinks = null;
-	private int numImgLinks;
 	private int curImgIndex;
 
 	private Dimension initialDim = new Dimension(800, 600);
+	private IterationState iterationState = new IterationState("b");
+	private JProgressBar pbar;
+	private ProgressCallback pcallback = new ProgressCallback() {
+		@Override
+		public void update(int progress) {
+			if(progress == -1) {
+				pbar.setIndeterminate(true);
+			}
+			else {
+				if(pbar.isIndeterminate())
+					pbar.setIndeterminate(false);
+				
+				pbar.setValue(progress);
+			}
+			
+			repaint();
+		}
+	};
 	
 	public ImageViewer() throws Exception {
 		super("KCImageViewer");
@@ -49,9 +67,17 @@ public class ImageViewer extends JFrame {
 		});
 		initFrame();
 		initImgPanel();
-		initButtons();
-		initButtonPanel();
+		initButtons();		
+		initLowerPanel();		
 		initKeyEventDispatcher();
+	}
+
+	private void initLowerPanel() {
+		JPanel lowerPane = new JPanel(new BorderLayout());
+		lowerPane.add(initButtonPanel(), BorderLayout.CENTER);
+		add(lowerPane, BorderLayout.SOUTH);		
+		pbar = new JProgressBar();
+		lowerPane.add(pbar, BorderLayout.EAST);
 	}
 
 	private void initKeyEventDispatcher() {
@@ -91,8 +117,7 @@ public class ImageViewer extends JFrame {
 	}
 
 	private void loadLinks() throws Exception {
-		imgLinks = kic.collectImgLinksForBoards(new String[]{"m"});
-		numImgLinks = imgLinks.size();
+		imgLinks = kic.startImgLinkIteration(iterationState, 15, pcallback);
 		curImgIndex = -1;
 		showNextImg();
 	}
@@ -100,12 +125,18 @@ public class ImageViewer extends JFrame {
 	public void showNextImg() throws Exception {
 		if(imgLinks != null) {
 			curImgIndex++;
-			if(curImgIndex >= numImgLinks) {
-				curImgIndex = numImgLinks - 1;
+			if(curImgIndex >= imgLinks.size()) {
+				if(iterationState.done)
+					curImgIndex = imgLinks.size() - 1;
+				else {
+					imgLinks.addAll(kic.continueImgLinkIteration(iterationState, 15, pcallback));
+				}
 			}
-			paintCurImg();
+			
 			if(preloadsInvalidated())
 				updatePreloads();
+			
+			paintCurImg();			
 		}
 	}
 	
@@ -113,21 +144,21 @@ public class ImageViewer extends JFrame {
 		return !preloadedThumbs.containsKey(curImgIndex+1);
 	}
 
-	private void updatePreloads() throws Exception {
-		System.out.println("Start preloads");
+	private void updatePreloads() throws Exception {		
+		pbar.setIndeterminate(true);
+		repaint();
 		
 		MediaTracker tracker = new MediaTracker(this);
 		
 		int[] addedIndices = new int[NUM_PRELOADED_THUMBS];
 		int j = 0;
-		for(int i = curImgIndex + 1; i < curImgIndex + 1 + NUM_PRELOADED_THUMBS && i < numImgLinks; i++) {
+		for(int i = curImgIndex + 1; i < curImgIndex + 1 + NUM_PRELOADED_THUMBS && i < imgLinks.size(); i++) {
 			addedIndices[j++] = i;
 			if(!preloadedThumbs.containsKey(i)) {
-				System.out.println("Fetching img no. " + i);
 				Image imgObj = Helpers.imgFromUrl(KCImageCollector.thumbnailLinkFromImgLink(imgLinks.get(i)));
 				preloadedThumbs.put(i, imgObj);
-				int w = imgPanel.getImgWidth();
-				int h = imgPanel.getImgHeight();
+				int w = imgPanel.getImgWidth(imgObj);
+				int h = imgPanel.getImgHeight(imgObj);
 				tracker.addImage(imgObj, i, w, h);
 				Toolkit.getDefaultToolkit().prepareImage(imgObj, w, h, imgPanel);
 			}
@@ -153,20 +184,18 @@ public class ImageViewer extends JFrame {
 		
 		tracker.waitForAll();
 		
-		System.out.println("Finished preloads!");
+		pbar.setIndeterminate(false);
+		repaint();
 	}
 
 	private void paintCurImg() throws Exception {
 		String curLink = imgLinks.get(curImgIndex);
-		boolean hit;
 		if(preloadedThumbs.containsKey(curImgIndex)) {
 			imgPanel.setToImage(preloadedThumbs.get(curImgIndex));
-			hit = true;
 		} else {
 			imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
-			hit = false;
 		}
-		Helpers.log("Showing image: " + curLink + " (" + (curImgIndex+1) + "/" + numImgLinks + ") cache " + (hit ? "hit" : "miss"));		
+		Helpers.log("Showing image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");		
 	}
 
 	public void showPrevImg() throws Exception {
@@ -252,13 +281,13 @@ public class ImageViewer extends JFrame {
 		});
 	}
 
-	private void initButtonPanel() {	
-		JPanel lowerPane = new JPanel(new FlowLayout());
-		lowerPane.add(backBtn);	
-		lowerPane.add(saveBtn);
-		lowerPane.add(discardBtn);
-		lowerPane.add(scaleBtn);
-		add(lowerPane, BorderLayout.SOUTH);
+	private JPanel initButtonPanel() {	
+		JPanel buttonPane = new JPanel(new FlowLayout());
+		buttonPane.add(backBtn);	
+		buttonPane.add(saveBtn);
+		buttonPane.add(discardBtn);
+		buttonPane.add(scaleBtn);
+		return buttonPane;
 	}
 
 	private void initFrame() {

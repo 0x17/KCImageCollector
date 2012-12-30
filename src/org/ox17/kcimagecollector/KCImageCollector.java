@@ -128,4 +128,40 @@ public class KCImageCollector {
 		return imgLink.replace("/files/", "/thumbnails/");
 	}
 	
+	public String pollUnvisitedThreadLink(String boardName, List<String> pageLinks, List<String> visitedThreadLinks) throws Exception {
+		for(String pageLink : pageLinks) {
+			List<String> tls = collectThreadLinksForPage(pageLink, boardName);
+			for(String tl : tls) {
+				if(!visitedThreadLinks.contains(tl)) {
+					visitedThreadLinks.add(tl);
+					return tl;
+				}
+			}
+		}
+		return null;
+	}
+
+	public List<String> startImgLinkIteration(IterationState is, int minImgCount, ProgressCallback callback) throws Exception {
+		callback.update(-1);
+		is.pageLinks = collectPageLinks(URL_BASE+"/"+is.boardName+"/", is.boardName);
+		return continueImgLinkIteration(is, minImgCount, callback);
+	}
+	
+	public List<String> continueImgLinkIteration(IterationState is, int minImgCount, ProgressCallback callback) throws Exception {		
+		List<String> imgLinks = new LinkedList<String>();
+		callback.update(-1);
+		while(imgLinks.size() < minImgCount) {
+			String threadLink = pollUnvisitedThreadLink(is.boardName, is.pageLinks, is.visitedThreadLinks);
+			if(threadLink != null) {
+				imgLinks.addAll(collectImgLinksForThread(threadLink));
+				callback.update((int)(Math.min((float)imgLinks.size() / minImgCount * 100.0f, 100.0f)));
+			} else {
+				callback.update(100);
+				is.done = true;
+				return imgLinks;
+			}
+		}
+		return imgLinks;
+	}
+	
 }
