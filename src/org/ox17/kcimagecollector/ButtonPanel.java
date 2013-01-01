@@ -1,20 +1,25 @@
 package org.ox17.kcimagecollector;
 
-import javax.swing.*;
-import java.awt.*;
+import java.awt.FlowLayout;
+import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-public class ButtonPanel extends JPanel {
+import javax.swing.JButton;
+import javax.swing.JPanel;
 
+public class ButtonPanel extends JPanel {
+	private static final long serialVersionUID = 6060989310045317163L;
+	
 	private JButton backBtn;
 	private JButton discardBtn;
 	private JButton saveBtn;
 	private JButton scaleBtn;
 	private JButton previewBtn;
 	private JButton copyBtn;
+	
 	private ImageViewer viewer;
 	private final PreviewFrame previewFrame;
 

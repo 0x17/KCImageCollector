@@ -8,6 +8,8 @@ import java.io.File;
 
 public class PreviewFrame extends JFrame {
 
+	private static final long serialVersionUID = 4680424458007936810L;
+	
 	private ImagePanel imgPanel;
 	private String lastImgUrl;
 	private JLabel topLbl = new JLabel(":3");

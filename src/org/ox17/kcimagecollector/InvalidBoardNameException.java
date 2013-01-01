@@ -1,6 +1,7 @@
 package org.ox17.kcimagecollector;
 
 public class InvalidBoardNameException extends Exception {
+	private static final long serialVersionUID = 4208242580880576159L;
 	private final String boardName;
 
 	public InvalidBoardNameException(String boardName) {

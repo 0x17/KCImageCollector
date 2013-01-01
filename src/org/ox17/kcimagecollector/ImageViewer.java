@@ -8,8 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class ImageViewer extends JFrame {
-	
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = -2616890038895425012L;
 
 	protected static final String NO_IMGS_LOADED_MSG = "No images loaded yet. Please wait for \"Found x images...\" message!";
 

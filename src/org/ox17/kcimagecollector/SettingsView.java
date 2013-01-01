@@ -1,21 +1,36 @@
 package org.ox17.kcimagecollector;
 
-import java.awt.*;
+import org.omg.CORBA.BAD_INV_ORDER;
+
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import javax.swing.*;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 public class SettingsView extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-	private JTextField boardNameField;
+	private JComboBox<String> boardCombo;
+	private List<Board> boards;
 
-	public SettingsView() {
+	public SettingsView() throws Exception {
 		super("Settings");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout());
+
+		boards = determineBoards();
 
 		JLabel topLbl = new JLabel("<html><div align=\"center\"><h1>KCImageCollector</h1>" + getRandomMsg() + "<br /><h3>Settings:</h3></div></html>");
 		topLbl.setHorizontalAlignment(JLabel.CENTER);
@@ -29,7 +44,7 @@ public class SettingsView extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {			
 				try {
-					String boardName = boardNameField.getText();
+					String boardName = boards.get(boardCombo.getSelectedIndex()).getSlashedName();
 					validateBoardName(boardName);
 					ImageViewer iv;
 					iv = new ImageViewer();
@@ -65,16 +80,51 @@ public class SettingsView extends JFrame {
 		return randomMessages[new Random().nextInt(randomMessages.length)];
 	}
 
+	private static class Board {
+		public String name;
+		public String description;
+		public Board(String name, String description) {
+			this.name = name;
+			this.description = description;
+		}
+		@Override
+		public String toString() {
+			return "Board{" + "name='" + name + '\'' + ", description='" + description + '\'' + '}';
+		}
+
+		public String getSlashedName() {
+			return "/"+name+"/";
+		}
+	}
+
+	private static List<Board> determineBoards() throws Exception {
+		List<Board> boards = new LinkedList<Board>();
+		String navSrc = Helpers.loadUrlIntoStr("http://krautchan.net/nav");
+		Pattern p = Pattern.compile("<li id=\"board_\\w+\" class=\"board_newposts\"><a href=\"/\\w+/\" target=\"main\">/(\\w+)/ - (.+?)</a></li>");
+		Matcher m = p.matcher(navSrc);
+		while(m.find()) {
+			if(m.groupCount() == 2) {
+				boards.add(new Board(m.group(1), m.group(2)));
+			}
+		}
+		return boards;
+	}
+
 	private JPanel initSettingsPanel() {
 		JPanel settingsPanel = new JPanel(new GridLayout(2,2));
 		JLabel hubLbl = new JLabel("Hub: ");
 		settingsPanel.add(hubLbl);
-		JComboBox hubCombo = new JComboBox(new String[] {"Krautchan"});
+		JComboBox<String> hubCombo = new JComboBox<String>(new String[] {"Krautchan"});
 		settingsPanel.add(hubCombo);
 		JLabel boardNameLbl = new JLabel("Board name:");
+		boardCombo = new JComboBox<String>();
+
+		for(Board board : boards) {
+			boardCombo.addItem("/" + board.name + "/ - " + board.description);
+		}
+
 		settingsPanel.add(boardNameLbl);
-		boardNameField = new JTextField("/b/");
-		settingsPanel.add(boardNameField);
+		settingsPanel.add(boardCombo);
 		return settingsPanel;
 	}
 
