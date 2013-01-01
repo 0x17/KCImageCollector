@@ -3,6 +3,7 @@ package org.ox17.kcimagecollector;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Random;
 
 import javax.swing.*;
 
@@ -15,6 +16,9 @@ public class SettingsView extends JFrame {
 		super("Settings");
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLayout(new BorderLayout());
+
+		JLabel topLbl = new JLabel("<html><div align=\"center\"><h1>KCImageCollector</h1>" + getRandomMsg() + "<br /><h3>Settings:</h3></div></html>");
+		add(topLbl, BorderLayout.NORTH);
 
 		JPanel settingsPanel = initSettingsPanel();
 		add(settingsPanel, BorderLayout.CENTER);
@@ -39,9 +43,20 @@ public class SettingsView extends JFrame {
 		});
 		add(okBtn, BorderLayout.SOUTH);
 		
-		setSize(300, 200);
+		setSize(300, 280);
 		setResizable(false);
 		setLocationRelativeTo(null);
+	}
+
+	private String getRandomMsg() {
+		final String[] randomMessages = new String[] {
+				"Abooooooooow!",
+				"Bernd, stell dir vor, du schlägst jemanden so hart, <i>dass er zu einer Tür wird</i>.",
+				"Vor einem Jahr hab ich mir für ca. 300 Euro die <i>Casio EX-S770</i> Kamera gekauft.",
+				"Ich bin Bernd! Nein, nicht ein Bernd, der Bernd... <i>es gibt nur einen</i>!",
+				"Georg Schnurer ist nicht nur <i>EXPERTE</i> in allen Computerbereichen sondern auch ein halbwegs etabliertes Mem im Krautkanal."
+		};
+		return randomMessages[new Random().nextInt(randomMessages.length)];
 	}
 
 	private JPanel initSettingsPanel() {
