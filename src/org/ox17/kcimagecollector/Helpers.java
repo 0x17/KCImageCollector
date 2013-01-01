@@ -17,6 +17,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 
 public class Helpers {
 	
@@ -107,5 +108,28 @@ public class Helpers {
 		String[] parts = imgName.split("\\.");
 		return parts[parts.length-1];
 	}
-	
+
+	public static void enableNimbusLAF() throws Exception {
+		for(UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+			if(info.getName().equals("Nimbus")) {
+				UIManager.setLookAndFeel(info.getClassName());
+				break;
+			}
+		}
+	}
+
+	public static String getOSName() {
+		String osName = System.getProperty("os.name");
+		if(osName.contains("Windows"))
+			return "Win32";
+		else if(osName.contains("Mac"))
+			return "OSX";
+		else if(osName.contains("Linux"))
+			return "Linux";
+		else return osName;
+	}
+
+	public static void showException(Exception e) {
+		JOptionPane.showMessageDialog(null, e.getMessage(), "Exception", JOptionPane.ERROR_MESSAGE);
+	}
 }

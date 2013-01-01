@@ -1,8 +1,6 @@
 package org.ox17.kcimagecollector;
 
-import java.awt.Dimension;
-import java.awt.Graphics;
-import java.awt.Image;
+import java.awt.*;
 
 import javax.swing.JPanel;
 
@@ -43,6 +41,13 @@ public class ImagePanel extends JPanel {
 				g.drawImage(img, x, y, imgWidth, imgHeight, this);
 			}
 		}
+	}
+
+	public void prepareImage(Image imgObj, MediaTracker tracker, int id) {
+		int w = getImgWidth(imgObj);
+		int h = getImgHeight(imgObj);
+		tracker.addImage(imgObj, id, w, h);
+		Toolkit.getDefaultToolkit().prepareImage(imgObj, w, h, this);
 	}
 	
 	public int getImgWidth() {

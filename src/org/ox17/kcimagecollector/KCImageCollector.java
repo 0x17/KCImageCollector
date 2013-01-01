@@ -184,14 +184,6 @@ public class KCImageCollector {
 			Helpers.log("Found " + ctr + " images on " + threadLink);
 		}		
 	}
-
-	public static void main(String[] args) throws Exception {
-		final String[] boards = {"b", "v", "int"};
-		
-		KCImageCollector tlc = new KCImageCollector();		
-		List<String> imgLinks = tlc.collectImgLinksForBoards(boards);				
-		buildHtmlFileOutOfImgLinks(imgLinks, "kcdump.html");
-	}
 	
 	public static String thumbnailLinkFromImgLink(String imgLink) {
 		return imgLink.replace("/files/", "/thumbnails/");
