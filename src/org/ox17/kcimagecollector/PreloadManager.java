@@ -25,7 +25,7 @@ public class PreloadManager {
 		int j = 0;
 		for(int i = curImgIndex + 1; i < curImgIndex + 1 + NUM_PRELOADED_THUMBS && i < imgLinks.size(); i++) {
 			addedIndices[j++] = i;
-			if(!preloadedThumbs.containsKey(i)) {
+			if(!preloadedThumbs.containsKey(i) && i != 0) {
 				Image imgObj = Helpers.imgFromUrl(KCImageCollector.thumbnailLinkFromImgLink(imgLinks.get(i)));
 				preloadedThumbs.put(i, imgObj);
 				imgPanel.prepareImage(imgObj, tracker, i);

@@ -24,6 +24,8 @@ public class ImageViewer extends JFrame {
 
 	private Dimension initialDim = new Dimension(800, 600);
 	private JProgressBar pbar;
+
+	private PreviewFrame previewFrame = new PreviewFrame();
 	
 	private LinkFoundCallback lfcallback = new LinkFoundCallback() {
 		@Override
@@ -33,7 +35,6 @@ public class ImageViewer extends JFrame {
 			}
 		}
 	};
-
 
 	public ImageViewer() throws Exception {
 		super("KCImageViewer");
@@ -106,7 +107,7 @@ public class ImageViewer extends JFrame {
 	public void loadLinks(String boardName) throws Exception {
 		imgLinks = new LinkedList<String>();
 		/*Thread collectThread = */KCImageCollector.collectImgLinksForBoardConcurrent(boardName, lfcallback);
-		imgLinks.add("http://krautchan.net/files/1331112741002.png");
+		imgLinks.add(KRAUTMARIE_LINK);
 		curImgIndex = -1;
 
 		preloadMgr = new PreloadManager(this);
@@ -128,14 +129,23 @@ public class ImageViewer extends JFrame {
 		}
 	}
 
+	private final static String KRAUTMARIE_LINK = "http://krautchan.net/images/krautmarie-kcwallpaper-klein.jpg";
+
 	private void paintCurImg() throws Exception {
 		String curLink = imgLinks.get(curImgIndex);
+
+		if(curLink.equals(KRAUTMARIE_LINK)) {
+			imgPanel.setToImageFromLink(KRAUTMARIE_LINK);
+			imgIdLbl.setText("Current image: Krautmarie");
+			return;
+		}
+
 		if(preloadMgr.isImgPreloaded(curImgIndex)) {
 			imgPanel.setToImage(preloadMgr.getPreloadedImg(curImgIndex));
 		} else {
 			imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
 		}
-		imgIdLbl.setText("Current image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");		
+		imgIdLbl.setText("Current image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");
 	}
 
 	private void showPrevImg() throws Exception {
@@ -190,5 +200,9 @@ public class ImageViewer extends JFrame {
 
 	public List<String> getImageLinks() {
 		return imgLinks;
+	}
+
+	public PreviewFrame getPreviewFrame() {
+		return previewFrame;
 	}
 }

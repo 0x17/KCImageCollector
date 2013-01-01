@@ -1,7 +1,6 @@
 package org.ox17.kcimagecollector;
 
-import java.awt.Image;
-import java.awt.Toolkit;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -131,5 +130,9 @@ public class Helpers {
 
 	public static void showException(Exception e) {
 		JOptionPane.showMessageDialog(null, e.getMessage(), "Exception", JOptionPane.ERROR_MESSAGE);
+	}
+
+	public static Dimension getScreenDims() {
+		return Toolkit.getDefaultToolkit().getScreenSize();
 	}
 }

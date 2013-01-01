@@ -7,7 +7,7 @@ import javax.swing.JPanel;
 public class ImagePanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	private Image img = null;
-	private boolean scaled;
+	private ImageScaler imageScaler = new ImageScaler(this);
 	
 	public ImagePanel() throws Exception {
 	}
@@ -31,7 +31,7 @@ public class ImagePanel extends JPanel {
 			int imgWidth = getImgWidth();
 			int imgHeight = getImgHeight();
 			
-			if(!scaled) {
+			if(!imageScaler.isScaled()) {
 				int x = (int)((boundsDim.width - imgWidth) / 2.0f);
 				int y = (int)((boundsDim.height - imgHeight) / 2.0f);
 				g.drawImage(img, x, y, this);
@@ -44,33 +44,22 @@ public class ImagePanel extends JPanel {
 	}
 
 	public void prepareImage(Image imgObj, MediaTracker tracker, int id) {
-		int w = getImgWidth(imgObj);
-		int h = getImgHeight(imgObj);
+		int w = imageScaler.getImgWidth(imgObj);
+		int h = imageScaler.getImgHeight(imgObj);
 		tracker.addImage(imgObj, id, w, h);
 		Toolkit.getDefaultToolkit().prepareImage(imgObj, w, h, this);
 	}
 	
 	public int getImgWidth() {
-		return getImgWidth(this.img);
+		return imageScaler.getImgWidth(this.img);
 	}
 	
 	public int getImgHeight() {
-		return getImgHeight(this.img);
-	}
-	
-	public int getImgWidth(Image image) {
-		return scaled ? (int)(getBounds().width * 0.8f) : image.getWidth(this);
-	}
-	
-	public int getImgHeight(Image image) {
-		return scaled ? (int)(getBounds().height * 0.8f) : image.getHeight(this);
+		return imageScaler.getImgHeight(this.img);
 	}
 
-	public void toggleScale() {
-		scaled = !scaled;
-	}
 
-	public boolean isScaled() {
-		return scaled;
+	public ImageScaler getScaler() {
+		return imageScaler;
 	}
 }

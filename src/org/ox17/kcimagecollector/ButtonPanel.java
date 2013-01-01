@@ -9,12 +9,19 @@ import java.awt.event.ActionListener;
 
 public class ButtonPanel extends JPanel {
 
-	private JButton backBtn, discardBtn, saveBtn, scaleBtn, copyBtn;
+	private JButton backBtn;
+	private JButton discardBtn;
+	private JButton saveBtn;
+	private JButton scaleBtn;
+	private JButton previewBtn;
+	private JButton copyBtn;
 	private ImageViewer viewer;
+	private final PreviewFrame previewFrame;
 
 	public ButtonPanel(ImageViewer viewer) {
 		super(new FlowLayout());
 		this.viewer = viewer;
+		this.previewFrame = viewer.getPreviewFrame();
 		initButtons();
 		addButtons();
 	}
@@ -24,7 +31,23 @@ public class ButtonPanel extends JPanel {
 		initDiscardButton();
 		initSaveButton();
 		initScaleButton();
+		initPreviewButton();
 		initCopyButton();
+	}
+
+	private void initPreviewButton() {
+		previewBtn = new JButton("Preview");
+		previewBtn.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					previewFrame.previewImgWithUrl(viewer.getCurImgLink());
+				} catch(Exception ex) {
+					Helpers.showException(ex);
+					ex.printStackTrace();
+				}
+			}
+		});
 	}
 
 	private void addButtons() {
@@ -32,6 +55,7 @@ public class ButtonPanel extends JPanel {
 		add(saveBtn);
 		add(discardBtn);
 		add(scaleBtn);
+		add(previewBtn);
 		add(copyBtn);
 	}
 
@@ -56,8 +80,9 @@ public class ButtonPanel extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent ae) {
 				ImagePanel imgPanel = viewer.getImagePanel();
-				imgPanel.toggleScale();
-				scaleBtn.setText(imgPanel.isScaled() ? "Minimize" : "Maximize");
+				ImageScaler imgScaler = imgPanel.getScaler();
+				imgScaler.toggleScale();
+				scaleBtn.setText(imgScaler.isScaled() ? "Minimize" : "Maximize");
 				imgPanel.repaint();
 			}
 		});
