@@ -140,8 +140,10 @@ public class ImageViewer extends JFrame {
 		}
 
 		if(preloadMgr.isImgPreloaded(curImgIndex)) {
+			System.out.println("HIT");
 			imgPanel.setToImage(preloadMgr.getPreloadedImg(curImgIndex));
 		} else {
+			System.out.println("MISS");
 			imgPanel.setToImageFromLink(KCImageCollector.thumbnailLinkFromImgLink(curLink));
 		}
 		imgIdLbl.setText("Current image: " + curLink + " (" + (curImgIndex+1) + "/" + imgLinks.size() + ")");

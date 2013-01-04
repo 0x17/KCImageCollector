@@ -1,11 +1,11 @@
 package org.ox17.kcimagecollector;
 
-import org.omg.CORBA.BAD_INV_ORDER;
-
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
@@ -17,12 +17,11 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 public class SettingsView extends JFrame {
 
 	private static final long serialVersionUID = 1L;
-	private JComboBox<String> boardCombo;
+	private JComboBox boardCombo;
 	private List<Board> boards;
 
 	public SettingsView() throws Exception {
@@ -64,20 +63,23 @@ public class SettingsView extends JFrame {
 		setLocationRelativeTo(null);
 	}
 
-	private String getRandomMsg() {
-		final String[] randomMessages = new String[] {
-				"Der Mensch ist eine <i>energetische Matrix</i>!",
-				"<i>Muss</i> man wissen!",
-				"Die <i>Strahlenwaffen</i> des Super Cyber Kellerdrachen!",
-				"Abooooooooow!",
-				"Bernd, stell dir vor, du schlägst jemanden so hart, <i>dass er zu einer Tür wird</i>.",
-				"Vor einem Jahr hab ich mir für ca. 300 Euro die <i>Casio EX-S770</i> Kamera gekauft.",
-				"Ich bin Bernd! Nein, nicht ein Bernd, der Bernd... <i>es gibt nur einen</i>!",
-				"Georg Schnurer ist nicht nur <i>EXPERTE</i> in allen Computerbereichen sondern auch ein halbwegs etabliertes Mem im Krautkanal.",
-				"Mensch Bernd. Ist das nicht der <i>Megahammer</i>? Du da und ich hier und wir beide trotzdem da?",
-				"Pornos sind voll krank und ihr <i>Krautchanloser</i> seid es auch."
-		};
-		return randomMessages[new Random().nextInt(randomMessages.length)];
+	private List<String> randomMessages;
+
+	private String getRandomMsg() throws Exception {
+		if(randomMessages == null) {
+			randomMessages = new LinkedList<String>();
+			FileReader fr = new FileReader("data/messages.txt");
+			BufferedReader br = new BufferedReader(fr);
+			String line;
+			while(br.ready()) {
+				line = br.readLine().replace("\n","");
+				if(line.isEmpty()) continue;
+				randomMessages.add(line);
+			}
+			br.close();
+			fr.close();
+		}
+		return randomMessages.get(new Random().nextInt(randomMessages.size()));
 	}
 
 	private static class Board {
@@ -114,10 +116,10 @@ public class SettingsView extends JFrame {
 		JPanel settingsPanel = new JPanel(new GridLayout(2,2));
 		JLabel hubLbl = new JLabel("Hub: ");
 		settingsPanel.add(hubLbl);
-		JComboBox<String> hubCombo = new JComboBox<String>(new String[] {"Krautchan"});
+		JComboBox hubCombo = new JComboBox(new String[] {"Krautchan"});
 		settingsPanel.add(hubCombo);
 		JLabel boardNameLbl = new JLabel("Board name:");
-		boardCombo = new JComboBox<String>();
+		boardCombo = new JComboBox();
 
 		for(Board board : boards) {
 			boardCombo.addItem("/" + board.name + "/ - " + board.description);
