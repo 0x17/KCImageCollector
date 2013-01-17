@@ -1,10 +1,11 @@
 package org.ox17.kcimagecollector;
 
-import sun.awt.windows.ThemeReader;
-
-import java.awt.*;
-import java.util.*;
+import java.awt.Image;
+import java.awt.MediaTracker;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 public class PreloadManager {
 

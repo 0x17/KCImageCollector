@@ -18,9 +18,11 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+@SuppressWarnings("rawtypes")
 public class SettingsView extends JFrame {
 
 	private static final long serialVersionUID = 1L;
+	
 	private JComboBox boardCombo;
 	private List<Board> boards;
 
@@ -112,10 +114,12 @@ public class SettingsView extends JFrame {
 		return boards;
 	}
 
+	@SuppressWarnings("unchecked")
 	private JPanel initSettingsPanel() {
 		JPanel settingsPanel = new JPanel(new GridLayout(2,2));
 		JLabel hubLbl = new JLabel("Hub: ");
 		settingsPanel.add(hubLbl);
+		
 		JComboBox hubCombo = new JComboBox(new String[] {"Krautchan"});
 		settingsPanel.add(hubCombo);
 		JLabel boardNameLbl = new JLabel("Board name:");
